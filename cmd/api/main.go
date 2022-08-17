@@ -7,6 +7,10 @@ import (
 	"time"
 
 	"github.com/see-air-uh/asxce-toga/data"
+
+	_ "github.com/jackc/pgconn"
+	_ "github.com/jackc/pgx/v4"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 const webPort = "50001"
@@ -49,6 +53,7 @@ func connectToDB() *sql.DB {
 		connection, err := openDB(dsn)
 		if err != nil {
 			log.Println("Postgres not yet ready to connect...")
+			log.Println(err)
 			counts++
 		} else {
 			log.Println("Connected to postgres")
