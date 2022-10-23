@@ -4,4 +4,4 @@ RUN mkdir /app
 
 COPY toga /app
 
-CMD ["/app/toga"]
+CMD ["/app/ditto"]

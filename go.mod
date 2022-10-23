@@ -1,4 +1,4 @@
-module github.com/see-air-uh/asxce-toga
+module github.com/see-air-uh/finn-toga
 
 go 1.18
 
