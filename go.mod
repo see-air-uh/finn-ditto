@@ -1,4 +1,4 @@
-module github.com/see-air-uh/finn-toga
+module github.com/see-air-uh/finn-ditto
 
 go 1.18
 

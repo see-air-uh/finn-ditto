@@ -6,8 +6,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/see-air-uh/asxce-toga/auth"
-	"github.com/see-air-uh/asxce-toga/data"
+	"github.com/see-air-uh/finn-ditto/auth"
+	"github.com/see-air-uh/finn-ditto/data"
 	"google.golang.org/grpc"
 )
 

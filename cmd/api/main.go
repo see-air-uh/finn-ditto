@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/see-air-uh/asxce-toga/data"
+	"github.com/see-air-uh/finn-ditto/data"
 
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"

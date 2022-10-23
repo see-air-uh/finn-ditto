@@ -2,6 +2,6 @@ FROM alpine:latest
 
 RUN mkdir /app 
 
-COPY toga /app
+COPY ditto /app
 
 CMD ["/app/ditto"]
