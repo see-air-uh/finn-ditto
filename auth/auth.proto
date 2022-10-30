@@ -13,6 +13,10 @@ message CreateUserRequest {
   string password = 2;
 }
 
+message GetUserByUsernameRequest {
+  string username = 1;
+}
+
 message M_User {
   string email = 1;
   string username = 2;
@@ -20,10 +24,6 @@ message M_User {
   string lastName = 4;
 }
 
-message CreateUserResponse {
-  bool created = 1;
-  string username = 2;
-}
 
 
 // PAYLOAD
@@ -41,7 +41,18 @@ message AuthResponse {
   bool authed = 1;
 }
 
+message CreateUserResponse {
+  bool created = 1;
+  string username = 2;
+}
+
+message GetUserByUsernameResponse {
+  bool found = 1;
+  M_User user = 2;
+}
+
 service AuthService { 
   rpc AuthUser(AuthRequest) returns (AuthResponse);
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse);
 }
