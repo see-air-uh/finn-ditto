@@ -8,6 +8,24 @@ option go_package = "/auth";
 
 //  define the data being passed around
 
+message CreateUserRequest {
+  M_User argUser = 1;
+  string password = 2;
+}
+
+message M_User {
+  string email = 1;
+  string username = 2;
+  string firstName = 3;
+  string lastName = 4;
+}
+
+message CreateUserResponse {
+  bool created = 1;
+  string username = 2;
+}
+
+
 // PAYLOAD
 message AuthRequest {
   User argUser = 1;
@@ -25,4 +43,5 @@ message AuthResponse {
 
 service AuthService { 
   rpc AuthUser(AuthRequest) returns (AuthResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
 }
