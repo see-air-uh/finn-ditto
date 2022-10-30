@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/see-air-uh/finn-ditto/data"
 
 	_ "github.com/jackc/pgconn"
@@ -23,7 +24,10 @@ type Config struct {
 }
 
 func main() {
-
+	err := godotenv.Load()
+	if err != nil {
+		log.Panic("Error reading .env file...")
+	}
 	log.Println("Attempting to start authentication service...")
 
 	conn := connectToDB()
@@ -47,7 +51,7 @@ func main() {
 func connectToDB() *sql.DB {
 
 	dsn := os.Getenv("DSN")
-
+	log.Println("LOGGING OUT DSN >>" + dsn + "<<<")
 	//loop until connection to DB is made
 	for {
 		connection, err := openDB(dsn)
