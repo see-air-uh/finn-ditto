@@ -13,12 +13,38 @@ import (
 
 type AuthServer struct {
 	auth.UnimplementedAuthServiceServer
-	Models data.Models
+	Models  data.Models
+	M_Model data.M_Model
 }
 
 type AuthPayload struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+func (a *AuthServer) CreateUser(ctx context.Context, req *auth.CreateUserRequest) (*auth.CreateUserResponse, error) {
+	input := req.GetArgUser()
+
+	u := data.M_User{
+		Email:     input.Email,
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Username:  input.Username,
+		Password:  req.GetPassword(),
+		Active:    true,
+	}
+
+	err := a.M_Model.M_User.CreateUser(u)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &auth.CreateUserResponse{
+		Created:  true,
+		Username: u.Username,
+	}
+	return res, nil
+
 }
 
 func (a *AuthServer) AuthUser(ctx context.Context, req *auth.AuthRequest) (*auth.AuthResponse, error) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"os"
@@ -8,20 +9,28 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/see-air-uh/finn-ditto/data"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
-const webPort = "50001"
+const (
+	webPort  = "50001"
+	mongoURL = "mongodb://localhost:27017"
+)
 
 var counts int64
 
 type Config struct {
-	DB     *sql.DB
-	Models data.Models
+	DB      *sql.DB
+	Models  data.Models
+	M_Model data.M_Model
 }
+
+var client *mongo.Client
 
 func main() {
 	err := godotenv.Load()
@@ -29,6 +38,23 @@ func main() {
 		log.Panic("Error reading .env file...")
 	}
 	log.Println("Attempting to start authentication service...")
+
+	mongoClient, err := connectToMongo()
+	if err != nil {
+		log.Panic(err)
+	}
+
+	client = mongoClient
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+
+	defer cancel()
+
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			panic(err)
+		}
+	}()
 
 	conn := connectToDB()
 
@@ -39,13 +65,34 @@ func main() {
 
 	// set up config var
 	app := Config{
-		DB:     conn,
-		Models: data.New(conn),
+		DB:      conn,
+		Models:  data.New(conn),
+		M_Model: data.NewMongo(client),
 	}
 
 	// start the grpc server
 	app.gRPCListen()
 
+}
+
+func connectToMongo() (*mongo.Client, error) {
+	// create connection options
+	clientOptions := options.Client().ApplyURI(mongoURL)
+	clientOptions.SetAuth(options.Credential{
+		Username: "admin",
+		Password: "admin12345",
+	})
+
+	// connect
+	c, err := mongo.Connect(context.TODO(), clientOptions)
+
+	if err != nil {
+		log.Println("Error connecting:", err)
+		return nil, err
+	}
+	log.Println("Connected to mongo.")
+
+	return c, nil
 }
 
 func connectToDB() *sql.DB {
