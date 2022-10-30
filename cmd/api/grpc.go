@@ -9,6 +9,7 @@ import (
 	"github.com/see-air-uh/finn-ditto/auth"
 	"github.com/see-air-uh/finn-ditto/data"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 type AuthServer struct {
@@ -25,6 +26,18 @@ type AuthPayload struct {
 func (a *AuthServer) CreateUser(ctx context.Context, req *auth.CreateUserRequest) (*auth.CreateUserResponse, error) {
 	input := req.GetArgUser()
 
+	//check if username or email exists
+
+	_, err := a.M_Model.M_User.GetUserByEmail(input.Email)
+	if err == nil {
+		return nil, status.Errorf(401, "error. email in use")
+	}
+
+	_, err = a.M_Model.M_User.GetUserByUsername(input.Username)
+	if err == nil {
+		return nil, status.Errorf(402, "error. username in use")
+	}
+
 	u := data.M_User{
 		Email:     input.Email,
 		FirstName: input.FirstName,
@@ -34,7 +47,7 @@ func (a *AuthServer) CreateUser(ctx context.Context, req *auth.CreateUserRequest
 		Active:    true,
 	}
 
-	err := a.M_Model.M_User.CreateUser(u)
+	err = a.M_Model.M_User.CreateUser(u)
 	if err != nil {
 		return nil, err
 	}
