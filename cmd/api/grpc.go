@@ -47,6 +47,29 @@ func (a *AuthServer) CreateUser(ctx context.Context, req *auth.CreateUserRequest
 
 }
 
+func (a *AuthServer) GetUserByUsername(ctx context.Context, req *auth.GetUserByUsernameRequest) (*auth.GetUserByUsernameResponse, error) {
+	username := req.GetUsername()
+
+	log.Println("USERNAME", username)
+
+	u, err := a.M_Model.M_User.GetUserByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	log.Println(u)
+	res := &auth.GetUserByUsernameResponse{
+		Found: true,
+		User: &auth.M_User{
+			Username:  u.Username,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
+			Email:     u.Email,
+		},
+	}
+
+	return res, nil
+}
+
 func (a *AuthServer) AuthUser(ctx context.Context, req *auth.AuthRequest) (*auth.AuthResponse, error) {
 	input := req.GetArgUser()
 
