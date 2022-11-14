@@ -6,16 +6,7 @@ package auth;
 //what is the go package called
 option go_package = "/auth";
 
-//  define the data being passed around
-
-message CreateUserRequest {
-  M_User argUser = 1;
-  string password = 2;
-}
-
-message GetUserByUsernameRequest {
-  string username = 1;
-}
+//  1 -- creating a user
 
 message M_User {
   string email = 1;
@@ -24,26 +15,39 @@ message M_User {
   string lastName = 4;
 }
 
-
-
-// PAYLOAD
-message AuthRequest {
-  User argUser = 1;
-}
-
-message User {
-  string username = 1;
+message CreateUserRequest {
+  M_User argUser = 1;
   string password = 2;
-}
-
-// RESPONSE
-message AuthResponse {
-  bool authed = 1;
 }
 
 message CreateUserResponse {
   bool created = 1;
   string username = 2;
+}
+
+// 2. Authorize a user
+
+message User {
+  string password = 1;
+  optional string email = 2;
+  optional string username = 3;
+}
+
+
+message AuthRequest {
+  User argUser = 1;
+}
+
+message AuthResponse {
+  bool authed = 1;
+}
+
+
+// 3. Authorize a JWT Token
+
+// extra
+message GetUserByUsernameRequest {
+  string username = 1;
 }
 
 message GetUserByUsernameResponse {
