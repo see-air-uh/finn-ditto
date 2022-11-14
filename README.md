@@ -8,7 +8,6 @@ For a user to be created, the following information needs to be supplied:
 * Email
 * Username
 * Password
-* Country
 
 ### 2. Authorize a User
 A user can be authenticated by passing in either an email or a username as well as a password.
