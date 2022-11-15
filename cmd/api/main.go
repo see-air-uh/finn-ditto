@@ -60,7 +60,7 @@ func main() {
 
 	// check for failed connection
 	if conn == nil {
-		log.Panic("Couldn't connect to Postgres!")
+		log.Panic("Couldn't connect to database!")
 	}
 
 	// set up config var

@@ -37,7 +37,6 @@ func (a *AuthServer) CreateUser(ctx context.Context, req *auth.CreateUserRequest
 	if err == nil {
 		return nil, status.Errorf(402, "error. username in use")
 	}
-
 	u := data.M_User{
 		Email:     input.Email,
 		FirstName: input.FirstName,
@@ -57,19 +56,15 @@ func (a *AuthServer) CreateUser(ctx context.Context, req *auth.CreateUserRequest
 		Username: u.Username,
 	}
 	return res, nil
-
 }
 
 func (a *AuthServer) GetUserByUsername(ctx context.Context, req *auth.GetUserByUsernameRequest) (*auth.GetUserByUsernameResponse, error) {
 	username := req.GetUsername()
 
-	log.Println("USERNAME", username)
-
 	u, err := a.M_Model.M_User.GetUserByUsername(username)
 	if err != nil {
 		return nil, err
 	}
-	log.Println(u)
 	res := &auth.GetUserByUsernameResponse{
 		Found: true,
 		User: &auth.M_User{
@@ -84,28 +79,34 @@ func (a *AuthServer) GetUserByUsername(ctx context.Context, req *auth.GetUserByU
 }
 
 func (a *AuthServer) AuthUser(ctx context.Context, req *auth.AuthRequest) (*auth.AuthResponse, error) {
-	input := req.GetArgUser()
+	// input := req.GetArgUser()
 
-	// attempt to grab user by passed in email
-	user, err := a.Models.User.GetByUsername(input.Username)
-	// if the user does not exist
+	arg_user := req.GetArgUser()
+
+	if arg_user.GetUsername() == "" && arg_user.GetEmail() == "" {
+		return nil, fmt.Errorf("error. no email or username supplied")
+	}
+
+	var user *data.M_User
+
+	var err error
+	// determine which auth strategy should be used
+	if arg_user.GetUsername() != "" {
+		user, err = a.M_Model.M_User.GetUserByUsername(arg_user.GetUsername())
+	} else {
+		user, err = a.M_Model.M_User.GetUserByEmail(arg_user.GetEmail())
+	}
 	if err != nil {
-		res := &auth.AuthResponse{
-			Authed: false,
-		}
-		return res, err
+		return nil, err
+	}
+	result, err := user.PasswordMatches(arg_user.GetPassword())
+
+	if err != nil {
+		return nil, err
 	}
 
-	// check to see if the passwords match
-	valid, err := user.PasswordMatches(input.Password)
-	if err != nil || !valid {
-		res := &auth.AuthResponse{
-			Authed: false,
-		}
-		return res, err
-	}
 	res := &auth.AuthResponse{
-		Authed: true,
+		Authed: result,
 	}
 	return res, nil
 
