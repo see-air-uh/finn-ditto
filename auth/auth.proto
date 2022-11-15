@@ -29,7 +29,7 @@ message CreateUserResponse {
 
 message User {
   string password = 1;
-  optional string email = 2;
+  string email = 2;
   optional string username = 3;
 }
 
