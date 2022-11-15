@@ -29,7 +29,7 @@ type M_User struct {
 	Username  string    `bson:"username" json:"username"`
 	FirstName string    `bson:"first_name,omitempty" json:"first_name"`
 	LastName  string    `bson:"last_name,omitempty" json:"last_name"`
-	Password  string    `bson:"-" json:"-"`
+	Password  string    `bson:"password" json:"-"`
 	Active    bool      `bson:"active" json:"active"`
 	CreatedAt time.Time `bson:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updatedAt"`
@@ -79,11 +79,26 @@ func (c *M_User) GetUserByUsername(arg_username string) (*M_User, error) {
 	collection := client.Database("users").Collection("users")
 
 	var user M_User
-	log.Println("USERNAME-->", arg_username)
 	err := collection.FindOne(ctx, bson.M{"username": arg_username}).Decode(&user)
-	log.Println(err)
+	user.Password = ""
 	if err != nil {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (c *M_User) PasswordMatches(arg_password string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	collection := client.Database("users").Collection("users")
+
+	var user M_User
+	err := collection.FindOne(ctx, bson.M{"username": c.Username, "password": arg_password}).Decode(&user)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+
 }
