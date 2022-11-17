@@ -131,8 +131,6 @@ func (a *AuthServer) CheckToken(ctx context.Context, req *auth.CheckTokenRequest
 		return nil, status.Error(codes.Unauthenticated, "error. invalid token")
 	}
 
-	log.Println(paseto_payload)
-
 	res := &auth.CheckTokenResponse{
 		Username: paseto_payload.Username,
 	}
