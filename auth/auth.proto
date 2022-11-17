@@ -46,6 +46,15 @@ message AuthResponse {
 
 // 3. Authorize a JWT Token
 
+message CheckTokenRequest {
+  string pasetoToken = 1;
+}
+
+message CheckTokenResponse {
+  string Username = 1;
+
+}
+
 // extra
 message GetUserByUsernameRequest {
   string username = 1;
@@ -60,4 +69,5 @@ service AuthService {
   rpc AuthUser(AuthRequest) returns (AuthResponse);
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse);
+  rpc CheckToken(CheckTokenRequest) returns (CheckTokenResponse);
 }
