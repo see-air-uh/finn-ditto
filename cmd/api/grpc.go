@@ -5,17 +5,24 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/see-air-uh/finn-ditto/auth"
 	"github.com/see-air-uh/finn-ditto/data"
+	"github.com/see-air-uh/finn-ditto/token"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// set the time duration of a token currently set at 1 hour
+var TOKEN_DURATION time.Duration = 3600000000000
+
 type AuthServer struct {
 	auth.UnimplementedAuthServiceServer
-	Models  data.Models
-	M_Model data.M_Model
+	Models       data.Models
+	M_Model      data.M_Model
+	PasetoClient token.GoTokens
 }
 
 type AuthPayload struct {
@@ -37,7 +44,6 @@ func (a *AuthServer) CreateUser(ctx context.Context, req *auth.CreateUserRequest
 	if err == nil {
 		return nil, status.Errorf(402, "error. username in use")
 	}
-
 	u := data.M_User{
 		Email:     input.Email,
 		FirstName: input.FirstName,
@@ -57,19 +63,15 @@ func (a *AuthServer) CreateUser(ctx context.Context, req *auth.CreateUserRequest
 		Username: u.Username,
 	}
 	return res, nil
-
 }
 
 func (a *AuthServer) GetUserByUsername(ctx context.Context, req *auth.GetUserByUsernameRequest) (*auth.GetUserByUsernameResponse, error) {
 	username := req.GetUsername()
 
-	log.Println("USERNAME", username)
-
 	u, err := a.M_Model.M_User.GetUserByUsername(username)
 	if err != nil {
 		return nil, err
 	}
-	log.Println(u)
 	res := &auth.GetUserByUsernameResponse{
 		Found: true,
 		User: &auth.M_User{
@@ -84,31 +86,55 @@ func (a *AuthServer) GetUserByUsername(ctx context.Context, req *auth.GetUserByU
 }
 
 func (a *AuthServer) AuthUser(ctx context.Context, req *auth.AuthRequest) (*auth.AuthResponse, error) {
-	input := req.GetArgUser()
+	// input := req.GetArgUser()
 
-	// attempt to grab user by passed in email
-	user, err := a.Models.User.GetByUsername(input.Username)
-	// if the user does not exist
-	if err != nil {
-		res := &auth.AuthResponse{
-			Authed: false,
-		}
-		return res, err
+	arg_user := req.GetArgUser()
+
+	if arg_user.GetUsername() == "" && arg_user.GetEmail() == "" {
+		return nil, fmt.Errorf("error. no email or username supplied")
 	}
 
-	// check to see if the passwords match
-	valid, err := user.PasswordMatches(input.Password)
-	if err != nil || !valid {
-		res := &auth.AuthResponse{
-			Authed: false,
-		}
-		return res, err
+	var user *data.M_User
+
+	var err error
+	// determine which auth strategy should be used
+	if arg_user.GetUsername() != "" {
+		user, err = a.M_Model.M_User.GetUserByUsername(arg_user.GetUsername())
+	} else {
+		user, err = a.M_Model.M_User.GetUserByEmail(arg_user.GetEmail())
+	}
+	if err != nil {
+		return nil, err
+	}
+	_, err = user.PasswordMatches(arg_user.GetPassword())
+
+	if err != nil {
+		return nil, err
+	}
+
+	paseto_token, err := a.PasetoClient.CreateToken(arg_user.GetUsername(), TOKEN_DURATION)
+	if err != nil {
+		return nil, err
 	}
 	res := &auth.AuthResponse{
-		Authed: true,
+		PasetoToken: paseto_token,
+		Username:    arg_user.GetUsername(),
 	}
 	return res, nil
 
+}
+
+func (a *AuthServer) CheckToken(ctx context.Context, req *auth.CheckTokenRequest) (*auth.CheckTokenResponse, error) {
+
+	paseto_payload, err := a.PasetoClient.VerifyToken(req.GetPasetoToken())
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "error. invalid token")
+	}
+
+	res := &auth.CheckTokenResponse{
+		Username: paseto_payload.Username,
+	}
+	return res, nil
 }
 
 func (app *Config) gRPCListen() {
@@ -119,7 +145,7 @@ func (app *Config) gRPCListen() {
 
 	s := grpc.NewServer()
 
-	auth.RegisterAuthServiceServer(s, &AuthServer{Models: app.Models})
+	auth.RegisterAuthServiceServer(s, &AuthServer{Models: app.Models, PasetoClient: app.PasetoClient})
 
 	log.Printf("GRPC server started on port %s", webPort)
 
