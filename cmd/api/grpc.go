@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// set the time duration of a token
+// set the time duration of a token currently set at 1 hour
 var TOKEN_DURATION time.Duration = 3600000000000
 
 type AuthServer struct {
