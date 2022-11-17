@@ -112,7 +112,9 @@ func (a *AuthServer) AuthUser(ctx context.Context, req *auth.AuthRequest) (*auth
 	}
 
 	paseto_token, err := a.PasetoClient.CreateToken(arg_user.GetUsername(), TOKEN_DURATION)
-
+	if err != nil {
+		return nil, err
+	}
 	res := &auth.AuthResponse{
 		PasetoToken: paseto_token,
 		Username:    arg_user.GetUsername(),
