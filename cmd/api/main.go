@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/see-air-uh/finn-ditto/data"
+	"github.com/see-air-uh/finn-ditto/token"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -25,12 +26,16 @@ const (
 var counts int64
 
 type Config struct {
-	DB      *sql.DB
-	Models  data.Models
-	M_Model data.M_Model
+	DB           *sql.DB
+	Models       data.Models
+	M_Model      data.M_Model
+	PasetoClient token.GoTokens
 }
 
 var client *mongo.Client
+
+// TODO: Get this key from MONGO DB
+var RANDOMSTRING = "Qcv4I4HV9161U6RiaqOggFDmTuQAl6DJ"
 
 func main() {
 	err := godotenv.Load()
@@ -63,11 +68,17 @@ func main() {
 		log.Panic("Couldn't connect to database!")
 	}
 
+	t, err := token.NewPasetoClient(RANDOMSTRING)
+	if err != nil {
+		panic(err)
+	}
+
 	// set up config var
 	app := Config{
-		DB:      conn,
-		Models:  data.New(conn),
-		M_Model: data.NewMongo(client),
+		DB:           conn,
+		Models:       data.New(conn),
+		M_Model:      data.NewMongo(client),
+		PasetoClient: t,
 	}
 
 	// start the grpc server

@@ -5,17 +5,23 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/see-air-uh/finn-ditto/auth"
 	"github.com/see-air-uh/finn-ditto/data"
+	"github.com/see-air-uh/finn-ditto/token"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
+// set the time duration of a token
+var TOKEN_DURATION time.Duration = 3600000000000
+
 type AuthServer struct {
 	auth.UnimplementedAuthServiceServer
-	Models  data.Models
-	M_Model data.M_Model
+	Models       data.Models
+	M_Model      data.M_Model
+	PasetoClient token.GoTokens
 }
 
 type AuthPayload struct {
@@ -99,14 +105,17 @@ func (a *AuthServer) AuthUser(ctx context.Context, req *auth.AuthRequest) (*auth
 	if err != nil {
 		return nil, err
 	}
-	result, err := user.PasswordMatches(arg_user.GetPassword())
+	_, err = user.PasswordMatches(arg_user.GetPassword())
 
 	if err != nil {
 		return nil, err
 	}
 
+	paseto_token, err := a.PasetoClient.CreateToken(arg_user.GetUsername(), TOKEN_DURATION)
+
 	res := &auth.AuthResponse{
-		Authed: result,
+		PasetoToken: paseto_token,
+		Username:    arg_user.GetUsername(),
 	}
 	return res, nil
 
@@ -120,7 +129,7 @@ func (app *Config) gRPCListen() {
 
 	s := grpc.NewServer()
 
-	auth.RegisterAuthServiceServer(s, &AuthServer{Models: app.Models})
+	auth.RegisterAuthServiceServer(s, &AuthServer{Models: app.Models, PasetoClient: app.PasetoClient})
 
 	log.Printf("GRPC server started on port %s", webPort)
 
