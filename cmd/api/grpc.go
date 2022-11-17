@@ -11,6 +11,7 @@ import (
 	"github.com/see-air-uh/finn-ditto/data"
 	"github.com/see-air-uh/finn-ditto/token"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -121,6 +122,21 @@ func (a *AuthServer) AuthUser(ctx context.Context, req *auth.AuthRequest) (*auth
 	}
 	return res, nil
 
+}
+
+func (a *AuthServer) CheckToken(ctx context.Context, req *auth.CheckTokenRequest) (*auth.CheckTokenResponse, error) {
+
+	paseto_payload, err := a.PasetoClient.VerifyToken(req.GetPasetoToken())
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "error. invalid token")
+	}
+
+	log.Println(paseto_payload)
+
+	res := &auth.CheckTokenResponse{
+		Username: paseto_payload.Username,
+	}
+	return res, nil
 }
 
 func (app *Config) gRPCListen() {
