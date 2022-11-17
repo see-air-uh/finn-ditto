@@ -39,7 +39,8 @@ message AuthRequest {
 }
 
 message AuthResponse {
-  bool authed = 1;
+  string pasetoToken = 1;
+  string username = 2;
 }
 
 
