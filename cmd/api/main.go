@@ -4,10 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"os"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/see-air-uh/finn-ditto/data"
 	"github.com/see-air-uh/finn-ditto/token"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -38,10 +36,11 @@ var client *mongo.Client
 var RANDOMSTRING = "Qcv4I4HV9161U6RiaqOggFDmTuQAl6DJ"
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Panic("Error reading .env file...")
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	// log.Panic("Error reading .env file...")
+
+	// }
 	log.Println("Attempting to start authentication service...")
 
 	mongoClient, err := connectToMongo()
@@ -61,12 +60,12 @@ func main() {
 		}
 	}()
 
-	conn := connectToDB()
+	// conn := connectToDB()
 
-	// check for failed connection
-	if conn == nil {
-		log.Panic("Couldn't connect to database!")
-	}
+	// // check for failed connection
+	// if conn == nil {
+	// 	log.Panic("Couldn't connect to database!")
+	// }
 
 	t, err := token.NewPasetoClient(RANDOMSTRING)
 	if err != nil {
@@ -75,8 +74,8 @@ func main() {
 
 	// set up config var
 	app := Config{
-		DB:           conn,
-		Models:       data.New(conn),
+		// DB:           conn,
+		// Models:       data.New(conn),
 		M_Model:      data.NewMongo(client),
 		PasetoClient: t,
 	}
@@ -106,32 +105,32 @@ func connectToMongo() (*mongo.Client, error) {
 	return c, nil
 }
 
-func connectToDB() *sql.DB {
+// func connectToDB() *sql.DB {
 
-	dsn := os.Getenv("DSN")
-	log.Println("LOGGING OUT DSN >>" + dsn + "<<<")
-	//loop until connection to DB is made
-	for {
-		connection, err := openDB(dsn)
-		if err != nil {
-			log.Println("Postgres not yet ready to connect...")
-			log.Println(err)
-			counts++
-		} else {
-			log.Println("Connected to postgres")
-			return connection
-		}
+// 	// dsn := os.Getenv("DSN")
+// 	// log.Println("LOGGING OUT DSN >>" + dsn + "<<<")
+// 	// //loop until connection to DB is made
+// 	// for {
+// 	// 	connection, err := openDB(dsn)
+// 	// 	if err != nil {
+// 	// 		log.Println("Postgres not yet ready to connect...")
+// 	// 		log.Println(err)
+// 	// 		counts++
+// 	// 	} else {
+// 	// 		log.Println("Connected to postgres")
+// 	// 		return connection
+// 	// 	}
 
-		// handle case can't connect to db
-		if counts > 10 {
-			log.Println(err)
-			return nil
-		}
-		log.Println("Backing off to 2 seconds...")
-		time.Sleep(2 * time.Second)
-		continue
-	}
-}
+// 	// 	// handle case can't connect to db
+// 	// 	if counts > 10 {
+// 	// 		log.Println(err)
+// 	// 		return nil
+// 	// 	}
+// 	// 	log.Println("Backing off to 2 seconds...")
+// 	// 	time.Sleep(2 * time.Second)
+// 	// 	continue
+// 	// }
+// }
 
 func openDB(dsn string) (*sql.DB, error) {
 
