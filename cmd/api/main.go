@@ -18,7 +18,7 @@ import (
 
 const (
 	webPort  = "50001"
-	mongoURL = "mongodb://localhost:27017"
+	mongoURL = "mongodb://mongodb:27017"
 )
 
 var counts int64
