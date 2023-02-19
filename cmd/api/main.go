@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/see-air-uh/finn-ditto/data"
 	"github.com/see-air-uh/finn-ditto/token"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,31 +18,35 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
-const (
-	webPort  = "50001"
-	mongoURL = "mongodb://mongodb:27017"
-)
+// const (
+// 	webPort  = "50001"
+// 	mongoURL = "mongodb://localhost:27017"
+// )
 
-var counts int64
+// var counts int64
 
 type Config struct {
 	DB           *sql.DB
 	Models       data.Models
 	M_Model      data.M_Model
 	PasetoClient token.GoTokens
+	WebPort string
 }
 
 var client *mongo.Client
 
 // TODO: Get this key from MONGO DB
-var RANDOMSTRING = "Qcv4I4HV9161U6RiaqOggFDmTuQAl6DJ"
+var RANDOM_STRING = "Qcv4I4HV9161U6RiaqOggFDmTuQAl6DJ"
 
 func main() {
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	// log.Panic("Error reading .env file...")
+		// check if there is an environment variable already set to production
+	environment := os.Getenv("ENVIRONMENT")
 
-	// }
+	if environment == "" {
+		// TODO: Load .env file
+		log.Println("Loading environment variables from local .env file")
+		godotenv.Load(".env")
+	}
 	log.Println("Attempting to start authentication service...")
 
 	mongoClient, err := connectToMongo()
@@ -49,7 +55,6 @@ func main() {
 	}
 
 	client = mongoClient
-
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 
 	defer cancel()
@@ -60,25 +65,12 @@ func main() {
 		}
 	}()
 
-	// conn := connectToDB()
-
-	// // check for failed connection
-	// if conn == nil {
-	// 	log.Panic("Couldn't connect to database!")
-	// }
-
-	t, err := token.NewPasetoClient(RANDOMSTRING)
+	t, err := token.NewPasetoClient(RANDOM_STRING)
 	if err != nil {
 		panic(err)
 	}
 
-	// set up config var
-	app := Config{
-		// DB:           conn,
-		// Models:       data.New(conn),
-		M_Model:      data.NewMongo(client),
-		PasetoClient: t,
-	}
+	app := setupApp(client, t)
 
 	// start the grpc server
 	app.gRPCListen()
@@ -86,11 +78,14 @@ func main() {
 }
 
 func connectToMongo() (*mongo.Client, error) {
+	dsn := os.Getenv("MONGO_URL")
+	user := os.Getenv("MONGO_USERNAME")
+	password := os.Getenv("MONGO_PASSWORD")
 	// create connection options
-	clientOptions := options.Client().ApplyURI(mongoURL)
+	clientOptions := options.Client().ApplyURI(dsn)
 	clientOptions.SetAuth(options.Credential{
-		Username: "admin",
-		Password: "admin12345",
+		Username: user,
+		Password: password,
 	})
 
 	// connect
@@ -105,46 +100,10 @@ func connectToMongo() (*mongo.Client, error) {
 	return c, nil
 }
 
-// func connectToDB() *sql.DB {
-
-// 	// dsn := os.Getenv("DSN")
-// 	// log.Println("LOGGING OUT DSN >>" + dsn + "<<<")
-// 	// //loop until connection to DB is made
-// 	// for {
-// 	// 	connection, err := openDB(dsn)
-// 	// 	if err != nil {
-// 	// 		log.Println("Postgres not yet ready to connect...")
-// 	// 		log.Println(err)
-// 	// 		counts++
-// 	// 	} else {
-// 	// 		log.Println("Connected to postgres")
-// 	// 		return connection
-// 	// 	}
-
-// 	// 	// handle case can't connect to db
-// 	// 	if counts > 10 {
-// 	// 		log.Println(err)
-// 	// 		return nil
-// 	// 	}
-// 	// 	log.Println("Backing off to 2 seconds...")
-// 	// 	time.Sleep(2 * time.Second)
-// 	// 	continue
-// 	// }
-// }
-
-func openDB(dsn string) (*sql.DB, error) {
-
-	db, err := sql.Open("pgx", dsn)
-
-	if err != nil {
-		return nil, err
+func setupApp( m *mongo.Client,t  token.GoTokens) *Config {
+	return &Config{
+		M_Model:      data.NewMongo(client),
+		PasetoClient: t,
+		WebPort: os.Getenv("WEB_PORT"),
 	}
-
-	err = db.Ping()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
 }

@@ -104,16 +104,19 @@ func (a *AuthServer) AuthUser(ctx context.Context, req *auth.AuthRequest) (*auth
 		user, err = a.M_Model.M_User.GetUserByEmail(arg_user.GetEmail())
 	}
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	_, err = user.PasswordMatches(arg_user.GetPassword())
 
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
 	paseto_token, err := a.PasetoClient.CreateToken(arg_user.GetUsername(), TOKEN_DURATION)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	res := &auth.AuthResponse{
@@ -138,7 +141,7 @@ func (a *AuthServer) CheckToken(ctx context.Context, req *auth.CheckTokenRequest
 }
 
 func (app *Config) gRPCListen() {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", webPort))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", app.WebPort))
 	if err != nil {
 		log.Fatalf("failed to listen for grpc %v", err)
 	}
@@ -147,7 +150,7 @@ func (app *Config) gRPCListen() {
 
 	auth.RegisterAuthServiceServer(s, &AuthServer{Models: app.Models, PasetoClient: app.PasetoClient})
 
-	log.Printf("GRPC server started on port %s", webPort)
+	log.Printf("GRPC server started on port %s", app.WebPort)
 
 	if err = s.Serve(lis); err != nil {
 		log.Fatalf("failed to listen for grpc %v", err)
